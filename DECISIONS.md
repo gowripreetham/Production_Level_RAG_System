@@ -40,3 +40,31 @@ if similarity works — and we proved it does.
 - Virtual environment: venv
 - Embedding model: all-MiniLM-L6-v2 (384 dimensions, fast, good quality)
 - Vector similarity: cosine similarity via sentence-transformers util
+
+
+## Phase 2: PDF Extraction & Cleaning
+
+### Why pymupdf over pdfplumber?
+pymupdf produces cleaner continuous text for research papers, handles 
+multi-column layouts better, and is significantly faster. pdfplumber 
+preserves visual layout which is useful for tables but not for our 
+use case where we need clean readable text for chunking.
+
+### Cleaning rules implemented:
+- Remove lines containing `@` (email addresses)
+- Remove lines starting with `http` (URLs)
+- Remove lines containing `.com` (web addresses)
+- Remove lines containing `Published by` (copyright notices)
+
+Rules were kept intentionally conservative. Content is more valuable 
+than cleanliness — a little boilerplate in chunks is far less damaging 
+than accidentally removing real research content.
+
+### Risk of over-cleaning:
+Over-aggressive cleaning risks removing relevant context from the 
+extracted text. Lost content cannot be retrieved — meaning the system 
+will fail to answer questions about that content entirely. Cleaning 
+can always be improved iteratively once the system is working end to end.
+
+### Tool decision:
+- PDF extraction: pymupdf (fitz)
