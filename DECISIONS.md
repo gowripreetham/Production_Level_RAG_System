@@ -68,3 +68,51 @@ can always be improved iteratively once the system is working end to end.
 
 ### Tool decision:
 - PDF extraction: pymupdf (fitz)
+
+
+## Phase 3: Vector Storage with ChromaDB
+
+### Why ChromaDB?
+ChromaDB was chosen over Weaviate because it is beginner-friendly and 
+perfect for local personal projects. Weaviate is designed for products 
+at scale and would add unnecessary infrastructure complexity at this 
+stage. Each chunk is stored with four things: the chunk text, its 
+embedding vector, metadata (source filename), and a unique id.
+
+### Duplicate chunk bug & fix
+When running main.py multiple times, all 871 chunks were being added 
+again on every run — creating silent duplicates in the database. Fixed 
+by checking if the first chunk of each paper (e.g. "1.pdf_chunk_0") 
+already exists in the collection before adding anything. If it exists, 
+the paper is skipped entirely.
+
+### PersistentClient vs Client
+`chromadb.Client()` stores data in memory only — wiped when the Python 
+session ends. Switched to `chromadb.PersistentClient(path="chroma_db")` 
+which saves the database to a local folder permanently. The `chroma_db/` 
+folder is added to `.gitignore` since databases should never be pushed 
+to GitHub.
+
+
+## Phase 4: Query & Relevance Filtering
+
+### How ChromaDB measures similarity
+ChromaDB uses cosine distance, not cosine similarity. The scale is 
+0 to 2 where 0 means identical and 2 means completely opposite. 
+This is the reverse of cosine similarity where 1 means identical. 
+Formula: cosine distance = 1 - cosine similarity.
+
+### Why a relevance threshold is needed
+Without a threshold, ChromaDB always returns results regardless of 
+how irrelevant they are — because we ask for n_results=3 it will 
+always return 3 chunks even if none of them are related to the 
+question. A threshold of 0.8 was chosen based on testing — relevant 
+questions scored around 0.4-0.5, irrelevant questions scored 1.7+. 
+Any chunk with distance > 0.8 is filtered out.
+
+### Behavior on irrelevant questions
+If all retrieved chunks are above the threshold, the system returns: 
+"I don't have enough information in the provided documents to answer 
+this question." This is critical for production — the system must be 
+grounded to its own data and never hallucinate answers from irrelevant 
+context.
