@@ -116,3 +116,28 @@ If all retrieved chunks are above the threshold, the system returns:
 this question." This is critical for production — the system must be 
 grounded to its own data and never hallucinate answers from irrelevant 
 context.
+
+
+## Phase 5: Generation with OpenAI
+
+### LLM Choice
+GPT-5-nano was chosen for generation. It is the cheapest model in the 
+GPT-5 family at $0.05 per 1M input tokens, making it cost effective 
+for testing. It is also reliable and more than capable for RAG 
+generation where the heavy lifting is done by retrieval, not the LLM.
+
+### Prompt Structure
+The prompt is split into system and user messages because that is how 
+OpenAI's chat completion API expects input. The system message defines 
+how the model should behave — acting as a research assistant, citing 
+sources, only using provided context. The user message contains the 
+actual context chunks and question.
+
+### Bug: Model refusing to answer
+The model was refusing to answer even when relevant context was 
+provided. The cause was an overly restrictive system prompt that 
+told the model to respond with an exact refusal phrase if context 
+was "insufficient." GPT-5-nano is a reasoning model and interpreted 
+this too conservatively. Fixed by simplifying the system prompt and 
+making the instructions less rigid — giving the model more flexibility 
+to use the context it was provided.
