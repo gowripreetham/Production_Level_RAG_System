@@ -1,5 +1,5 @@
-echo "venv/" > .gitignore
-echo "__pycache__/" >> .gitignore
-echo "*.pyc" >> .gitignore
-
-/data
+venv/
+__pycache__/
+*.pyc
+chroma_db/
+data/
