@@ -4,7 +4,7 @@ from src.generator import generate_answer
 client = chromadb.PersistentClient(path="chroma_db")
 collection = client.get_or_create_collection(name="papers")
 
-QUESTION = "How many School Streets exist in Paris as of summer 2025, and how much total street distance has been pedestrianized?"
+QUESTION = "In the Paris School Streets study, what are the four distinct categories of School Streets identified through field visits and street imagery analysis, what are their approximate proportions, and what was the average temperature differential detected between School Streets with cooling pavement and adjacent control streets?"
 
 results = collection.query(
     query_texts=[QUESTION],
