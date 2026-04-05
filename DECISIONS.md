@@ -141,3 +141,21 @@ was "insufficient." GPT-5-nano is a reasoning model and interpreted
 this too conservatively. Fixed by simplifying the system prompt and 
 making the instructions less rigid — giving the model more flexibility 
 to use the context it was provided.
+
+
+## Phase 6: Hybrid Retrieval (BM25 + Semantic)
+
+### Result
+Score improved from 6.5/10 to 8.2/10 (+1.7 points)
+
+### Why BM25 helped
+Semantic search alone struggles with exact numbers and domain-specific 
+terminology. BM25 keyword matching directly solved three major failure 
+patterns: numerical retrieval (Q6 +5, Q8 +3.5), precise terminology 
+(Q5 +5), and cross-fact retrieval (Q4 +3).
+
+### Remaining gaps
+Enumerated lists in methodology sections still fragmented (Q9). 
+Granular proportions within categories partially missing (Q10). 
+These are chunking boundary problems, not retrieval algorithm problems.
+Next step: cross-encoder re-ranking to further improve precision.
