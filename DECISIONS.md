@@ -159,3 +159,35 @@ Enumerated lists in methodology sections still fragmented (Q9).
 Granular proportions within categories partially missing (Q10). 
 These are chunking boundary problems, not retrieval algorithm problems.
 Next step: cross-encoder re-ranking to further improve precision.
+
+
+## Phase 7: Unstructured PDF Parsing & Chunk Quality
+
+### Why we switched to unstructured
+After 4 rounds of evaluation, it became clear the problem was never 
+the retrieval algorithm — it was the chunks themselves. Fixed-size 
+and semantic chunking were breaking numbered lists, splitting related 
+sentences, and creating mid-sentence fragments. No amount of BM25, 
+re-ranking, or threshold tuning can retrieve a chunk that doesn't 
+exist in the right form. Unstructured's structure-aware parsing 
+preserves document elements (titles, paragraphs, lists, tables) as 
+atomic units before chunking, which is why Q9 — the most persistent 
+failure across all rounds — went from 3/10 to 10/10 in one upgrade.
+
+### k=3 vs k=10 experiment findings
+Sending fewer chunks to the LLM is a better test of retrieval 
+precision. More context doesn't always help — research shows LLMs 
+suffer from "lost in the middle" degradation with long contexts. 
+k=3 forces the reranker to surface only the most relevant chunks, 
+removing noise and improving answer precision. k=10 helps for 
+multi-part questions where the answer spans multiple chunks. The 
+trade-off is real — k=3 won on Q9 precision, k=10 won on Q8 
+completeness.
+
+### Current best configuration
+- PDF extraction: unstructured (structure-aware, element-level parsing)
+- Chunking: chunk_by_title (max 2000 chars, overlap 200, overlap_all)
+- Retrieval: hybrid search (semantic + BM25 via RRF)
+- Re-ranking: cross-encoder/ms-marco-MiniLM-L-6-v2, top_n=3
+- Generation: GPT-5-nano with citation enforcement
+- Overall score: 8.8/10 (up from 6.5/10 baseline)

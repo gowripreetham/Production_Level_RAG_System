@@ -2,7 +2,7 @@ import sys
 sys.path.append(".")
 
 from tests.eval_questions import EVAL_QUESTIONS
-from src.retriever import build_retriever, hybrid_search
+from src.retriever import build_retriever, hybrid_search,rerank
 from src.generator import generate_answer
 
 collection, bm25, all_chunks, all_ids, all_metadatas = build_retriever()
@@ -13,10 +13,11 @@ for q in EVAL_QUESTIONS:
     print(f"Q: {q['question']}")
     print(f"{'='*60}")
     
-    filtered = hybrid_search(q["question"], collection, bm25, all_chunks, all_ids, all_metadatas, n_results=20)
+    hybrid_results = hybrid_search(q["question"], collection, bm25, all_chunks, all_ids, all_metadatas, n_results=20)
+    final_results = rerank(q["question"], hybrid_results, top_n=10)
     
     context = ""
-    for doc, meta, dist in filtered:
+    for doc, meta, dist in final_results:
         context += f"Source: {meta['source']}\n{doc}\n\n"
     
     answer = generate_answer(q["question"], context)

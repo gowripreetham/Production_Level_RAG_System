@@ -1,8 +1,9 @@
 from rank_bm25 import BM25Okapi
 import chromadb
 import numpy as np
+from sentence_transformers import CrossEncoder
 
-QUESTION = "In the Paris School Streets study, what are the four distinct categories of School Streets identified through field visits and street imagery analysis, what are their approximate proportions, and what was the average temperature differential detected between School Streets with cooling pavement and adjacent control streets?"
+model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
 
 def build_retriever():
@@ -63,11 +64,19 @@ def hybrid_search(question, collection, bm25, all_chunks, all_ids, all_metadatas
                 id_to_meta[chunk_id],
                 rrf_scores[chunk_id]
             ))
+    
     return results
 
-collection, bm25, all_chunks, all_ids, all_metadatas = build_retriever()
-results = hybrid_search(QUESTION, collection, bm25, all_chunks, all_ids, all_metadatas)
-for chunk, meta, score in results[:20]:
-    print(meta["source"], score)
-    print(chunk[:100])
-    print("---")
+def rerank(question, hybrid_results, top_n=3):
+    pairs = [(question, doc) for doc, meta, score in hybrid_results]
+    scores = model.predict(pairs)
+
+    scored_results = list(zip(scores, hybrid_results))
+    scored_results.sort(key=lambda x: x[0], reverse=True)
+    return [(doc, meta, score) for score, (doc, meta, _) in scored_results[:top_n]]
+     
+     
+
+
+
+

@@ -1,11 +1,11 @@
-import os
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from unstructured.chunking.title import chunk_by_title
 
-
-
-def chunk_text(text):
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50
+def chunk_text(elements):
+    chunks = chunk_by_title(
+        elements,
+        max_characters=2000,
+        new_after_n_chars=1500,
+        overlap=200,
+        overlap_all=True
     )
-    return splitter.split_text(text)
+    return [chunk.text for chunk in chunks if len(chunk.text) > 100]
