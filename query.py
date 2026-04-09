@@ -18,7 +18,7 @@ if not filtered:
 else:
     for doc, meta, dist in filtered:
         context+= f"Source: {meta['source']}\n{doc}\n\n"
-# print("CONTEXT BEING SENT:", context)
+print("CONTEXT BEING SENT:", context)
 
 answer = generate_answer(QUESTION,context)
 print(answer)
