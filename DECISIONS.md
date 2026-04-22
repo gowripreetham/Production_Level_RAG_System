@@ -191,3 +191,45 @@ completeness.
 - Re-ranking: cross-encoder/ms-marco-MiniLM-L-6-v2, top_n=3
 - Generation: GPT-5-nano with citation enforcement
 - Overall score: 8.8/10 (up from 6.5/10 baseline)
+
+
+## Phase 8: RAG Tracing with Langfuse -> Project 3
+
+### What was built
+Built a comprehensive tracing layer on top of the existing RAG 
+pipeline from Project 1 using Langfuse v4. Every step of the 
+pipeline is now instrumented — hybrid retrieval (20 chunks), 
+reranking (top 3 chunks), and generation (final answer with 
+context). Each step records its inputs, outputs, and latency, 
+making the full pipeline visible for every query in the Langfuse 
+dashboard.
+
+Key technical challenge: Langfuse released v4 in March 2026 with 
+a completely rewritten API based on OpenTelemetry. The old trace() 
+and span() methods no longer exist. Migrated to the new 
+get_client() and start_as_current_observation() context manager 
+pattern.
+
+### Most useful discovery from traces
+Observability revealed exactly where the system is shining and 
+where it falls short. By inspecting real traces, it became clear 
+that the retriever occasionally pulls in reference/bibliography 
+chunks from the papers — noise that is semantically similar to 
+research content but not useful for answering questions. This is 
+a chunking problem, not a retrieval problem, and would not have 
+been visible from evaluation scores alone. It also became possible 
+to see whether the reranker is selecting the right top 3 chunks 
+for any given question — and to pinpoint exactly which step 
+caused a wrong answer when one occurs.
+
+### Why observability matters in production
+Evaluation scores tell you how strong or weak a system is overall 
+— but they cannot tell you why a specific answer was wrong or 
+where in the pipeline the failure occurred. Observability solves 
+this by making every internal decision visible. For any unexpected 
+answer, you can now trace exactly which chunks were retrieved, 
+whether the reranker selected the right ones, and whether the 
+generator had the right context to work with. This makes 
+debugging fast and precise instead of guesswork. Evaluation and 
+observability serve different purposes — evaluation measures 
+system quality, observability enables system improvement.
