@@ -26,4 +26,4 @@ def generate_answer(question, context):
         ]
     )
     # print("RAW RESPONSE:", response)
-    return response.choices[0].message.content
+    return response.usage, response.choices[0].message.content
