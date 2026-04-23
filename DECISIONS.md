@@ -233,3 +233,35 @@ generator had the right context to work with. This makes
 debugging fast and precise instead of guesswork. Evaluation and 
 observability serve different purposes — evaluation measures 
 system quality, observability enables system improvement.
+
+
+## Phase 9: Production Monitoring — Cost, Latency, Groundedness & Failure Tracking
+
+### What was built
+Built a complete production monitoring layer on top of the Langfuse 
+tracing from Phase 8. Every query now tracks four key production 
+metrics: cost per query (input tokens, output tokens, and total cost 
+via OpenAI usage data), latency at P50/P95/P99 percentiles, 
+groundedness score via LLM-as-judge (0.0 to 1.0), and failure rate 
+with try/except blocks on every span. A monitoring report script 
+was built that pulls all traces from Langfuse and computes these 
+statistics across all historical queries.
+
+### Most interesting finding
+The system is performing very well on quality — 96% average 
+groundedness, 0% failure rate, and GPT-5-nano is extremely budget 
+friendly at $0.000911 per query ($2.73/month for 3000 queries). 
+The main weakness is latency — P50 of 11.52s and P95 of 29.40s, 
+which is high but expected given M1 8GB hardware running the 
+reranker locally. Also learned the difference between P50, P95, 
+P99 vs averages — percentiles catch outliers that averages hide, 
+which makes them far more useful for understanding real user 
+experience.
+
+### Why P95 matters more than average
+If P95 latency is 29 seconds, it means 5 out of every 100 users 
+are waiting more than 29 seconds for a response. Average latency 
+hides this — it gets pulled down by fast queries and masks the 
+worst user experiences. In production, you set SLAs on P95 and 
+P99, not averages, because those are the users most likely to 
+leave or complain.
