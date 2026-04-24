@@ -16,7 +16,7 @@ langfuse = get_client()
 QUESTION = "In the Paris School Streets study, what are the four distinct categories of School Streets identified through field visits and street imagery analysis, what are their approximate proportions, and what was the average temperature differential detected between School Streets with cooling pavement and adjacent control streets?"
 
 print("building retriever...")
-collection, bm25, all_chunks, all_ids, all_metadatas = build_retriever()
+client, bm25, all_chunks, all_ids, all_metadatas = build_retriever()
 print("retriever built!")
 
 with langfuse.start_as_current_observation(as_type="span", name="rag_query", input={"question": QUESTION}) as trace:
@@ -24,7 +24,7 @@ with langfuse.start_as_current_observation(as_type="span", name="rag_query", inp
     # SPAN 1 — Hybrid retrieval
     with langfuse.start_as_current_observation(as_type="span", name="hybrid_retrieval", input={"question": QUESTION, "n_results": 20}) as span1:
         try:
-            hybrid_results = hybrid_search(QUESTION, collection, bm25, all_chunks, all_ids, all_metadatas, n_results=20)
+            hybrid_results = hybrid_search(QUESTION, client, bm25, all_chunks, all_ids, all_metadatas, n_results=20)
             if not hybrid_results:
                 raise ValueError("Retriever returned 0 chunks")
             chunks_data = [{"source": m.get('source', 'unknown'), "distance": d, "text_preview": doc[:300]} for doc, m, d in hybrid_results]

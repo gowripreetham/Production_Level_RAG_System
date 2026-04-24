@@ -9,7 +9,7 @@ load_dotenv()
 langfuse = get_client()
 
 print("Building retriever...")
-collection, bm25, all_chunks, all_ids, all_metadatas = build_retriever()
+client, bm25, all_chunks, all_ids, all_metadatas = build_retriever()
 print("Ready!\n")
 
 results = []
@@ -37,7 +37,7 @@ for q in EVAL_QUESTIONS:
         # SPAN 1 — Hybrid retrieval
         with langfuse.start_as_current_observation(as_type="span", name="hybrid_retrieval", input={"question": question, "n_results": 20}) as span1:
             try:
-                hybrid_results = hybrid_search(question, collection, bm25, all_chunks, all_ids, all_metadatas, n_results=20)
+                hybrid_results = hybrid_search(question, client, bm25, all_chunks, all_ids, all_metadatas, n_results=20)
                 if not hybrid_results:
                     raise ValueError("Retriever returned 0 chunks")
                 chunks_data = [{"source": m.get('source', 'unknown'), "distance": d, "text_preview": doc[:300]} for doc, m, d in hybrid_results]
