@@ -265,3 +265,37 @@ hides this — it gets pulled down by fast queries and masks the
 worst user experiences. In production, you set SLAs on P95 and 
 P99, not averages, because those are the users most likely to 
 leave or complain.
+
+
+## Phase 10: Regression Gating with GitHub Actions + Qdrant Cloud
+
+### What was built
+Built a fully automated regression gate using GitHub Actions that 
+runs on every push to main. The workflow installs dependencies on 
+a fresh Ubuntu machine, connects to Qdrant Cloud, runs all 10 
+evaluation questions through the complete RAG pipeline, scores 
+groundedness for each answer using LLM-as-judge, and passes or 
+fails the build based on whether average groundedness meets the 
+0.90 threshold. Only builds that pass the gate get merged into 
+the repository.
+
+### Why we moved from ChromaDB to Qdrant Cloud
+ChromaDB stores the vector database locally in a chroma_db/ folder 
+on the developer's machine. GitHub Actions runs on a fresh Ubuntu 
+server that has no access to this local folder. Pushing the PDFs 
+to GitHub is not good practice for a public repo. Qdrant Cloud 
+solves this by hosting the embeddings remotely — GitHub Actions 
+connects to Qdrant Cloud via API key and URL stored as GitHub 
+Secrets, making the full pipeline available to CI without any 
+local files.
+
+### What happens when the gate fails
+When a developer pushes code that causes quality degradation — 
+such as a bad prompt change, different chunking parameters, or 
+a broken retrieval configuration — the regression gate runs the 
+full evaluation, detects that average groundedness has dropped 
+below 0.90, exits with code 1, and GitHub marks the build as 
+failed. The change cannot be merged. The developer is notified 
+exactly which questions failed and what the groundedness scores 
+were, making it easy to identify and fix the problem before it 
+reaches production.
