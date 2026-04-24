@@ -153,3 +153,78 @@ control for storage reasons).
 - **Prompt versioning is not optional** — treating prompts as versioned 
   config rather than hardcoded strings enables systematic experimentation
 
+
+
+## Project 3: RAG Monitoring & Observability
+
+Building the RAG system was 30% of the work. This layer handles 
+the remaining 70% — knowing whether the system is working correctly, 
+understanding why it fails, and preventing quality regressions.
+
+### What was added
+
+**Langfuse Tracing**
+Every query is now fully traced. For each request you can see 
+exactly which 20 chunks were retrieved, which 3 survived reranking, 
+what prompt was sent to the LLM, and what answer was generated. 
+Every step has timing and status recorded.
+
+**Production Metrics**
+Every query tracks:
+- Cost per query (input tokens, output tokens, total via OpenAI usage API)
+- Latency at P50, P95, P99 percentiles — not just averages
+- Failure rate with try/except on every pipeline step
+- Groundedness score via LLM-as-judge (0.0 to 1.0)
+
+**Monitoring Report**
+A report script pulls all historical traces from Langfuse and 
+computes production statistics across all queries:
+
+RAG SYSTEM MONITORING REPORT
+Total queries:    32
+Failure rate:     0.0%
+P50 latency:      11.52s
+P95 latency:      29.40s
+Avg cost/query:   $0.000911
+Est. monthly:     $2.73 (3000 queries)
+Avg groundedness: 0.96
+Easy questions:   0.99
+Tough questions:  0.92
+
+**Regression Gate (GitHub Actions + Qdrant Cloud)**
+Every push to main triggers an automated quality check:
+- Connects to Qdrant Cloud (embeddings hosted remotely)
+- Runs all 10 evaluation questions through the full pipeline
+- Scores groundedness for each answer
+- Passes only if average groundedness ≥ 0.90
+- Blocks the merge if quality has degraded
+
+This means no prompt change, chunking update, or retrieval 
+modification can reach production without passing a real 
+quality evaluation.
+
+### Key findings from monitoring
+
+- 0% failure rate across all queries
+- Average groundedness of 0.96 — answers are almost always 
+  supported by retrieved chunks
+- Q6 (DiD coefficient question) consistently scores lower — 
+  a retrieval issue where the specific statistical result 
+  doesn't surface in the top 3 chunks
+- GPT-5-nano costs $2.73/month at 3000 queries/day — 
+  extremely cost efficient
+- P95 latency of 29s reflects M1 8GB hardware constraints — 
+  would be 2-3x faster on a production server
+
+### Tech stack additions
+
+| Component | Tool |
+|---|---|
+| Tracing | Langfuse v4 |
+| Vector store | Qdrant Cloud |
+| CI/CD | GitHub Actions |
+| LLM judge | GPT-5-nano |
+| Metrics | Custom Python report |
+
+
+
